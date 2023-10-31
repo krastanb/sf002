@@ -58,15 +58,9 @@ class Board:
         res = "   " + "".join([f"  {i+1} " for i in range(self.size)])+"\n"
         for i, n in enumerate(self.field):
             res+=f"{i+1}  | "+" | ".join(n)+"\n"
-        return res
+        return res.replace('F','0')
     
-    def near_ship_check(self, dot:Dot): # проверяет, находится ли рядом с точкой - корабль (вверх, низ, лево, право и центр)
-        temp = [(-1,0),(0,-1), (0,0), (0,1), (1,0)] # проверяем 
-        for point in temp:
-            if self.field[dot.x+point[0]][dot.y+point[1]]=="■":
-                return False
-        return True
-
+    
     def out_dot_check(self, dot:Dot): # проверяет, входит ли точка в поле вообще
         if dot.x>0 and dot.x<self.size and dot.y>0 and dot.y<self.size:
             return True
@@ -75,11 +69,8 @@ class Board:
 
     def add_ship(self, ship):
         for dot in ship.dots:
-            if self.out_dot_check(dot):        # проверяем, что точки внутри поля
-                if self.field[dot.y-1][dot.x-1] =="0": # проверяем, что поле пустое
-                    pass
-                else:
-                    raise BoardException
+            if self.out_dot_check(dot) and self.field[dot.y-1][dot.x-1] =="0":        # проверяем, что точки внутри поля И поле пустое И вокруг точки (нет кораблей)
+                pass
             else:
                 raise BoardException
         for dot in ship.dots:
@@ -89,7 +80,7 @@ b = Board()
 a = Ship(Dot(2,4),4,False)
 b.add_ship(a)
 b.add_ship(Ship(Dot(2,1),2,True))
-b.add_ship(Ship(Dot(4,3),3,False))
+
 print(b)
 #print(*b.field, sep='\n')
 
