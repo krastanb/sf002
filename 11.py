@@ -125,6 +125,27 @@ class Board:
         print("Мимо!")
         return False
 
+class Player:
+    def __init__(self, board, enemy):
+        self.board = board
+        self.enemy = enemy
+    
+    def ask(self):
+        pass
+
+    def move(self):
+        pass
+
+class Computer(Player):
+    def ask(self):
+        pass
+
+class User(Player):
+    pass
+
+class Game:
+    def __init__(self, players):
+        self.player = User()
 
 board = Board()
 board.add_ship(Ship(Dot(2,2),1,True))
