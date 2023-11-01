@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, choice
 
 class Dot:
     """
@@ -28,7 +28,7 @@ class Ship:
         self.startpos = startpos # начальная позиция корабля 
         self.length = length # длина корабля
         self.vertical = vertical # если T-> корабль вертикальный
-        self.health = length # количество живых частей корабля 
+        self.health = length # здоровье корабля 
         
     @property
     def dots(self):
@@ -73,15 +73,11 @@ class Board:
         self.count = 0
 
     def __repr__(self):
-        #res = "   " + "".join([f"  {i+1} " for i in range(self.size)])+"\n"
-        #for i, n in enumerate(self.field):
-        #   res+=f"{i+1}  | "+" | ".join(n)+"\n"
-        #res = res.replace('C','0')
-        res = ""
-        for i in self.field:
-            res+= ' '.join(i) +'\n'
-        return res
-
+        res = "   "+''.join([f" {i}  " for i in range(1, self.size+1)])+"\n"
+        for num, i in enumerate(self.field, start=1):
+            res+= f"{num}   "+' | '.join(i) +'\n'
+        res = res.replace('C','0')
+        return res if not self.hidden else res.replace('■','0')
     
     def out_dot_check(self, dot:Dot): # проверяет, входит ли точка в поле вообще
         if dot.x>=0 and dot.x<self.size and dot.y>=0 and dot.y<self.size:
@@ -117,7 +113,7 @@ class Board:
                 if ship.health==0:
                     self.count+=1
                     print("Корабль уничтожен!")
-                    return False
+                    return True
                 else:
                     print("Есть пробитие!")
                     return True
@@ -126,39 +122,111 @@ class Board:
         return False
 
 class Player:
-    def __init__(self, board, enemy):
+    def __init__(self, board:Board, enemyboard):
         self.board = board
-        self.enemy = enemy
+        self.enemyboard = enemyboard
     
     def ask(self):
         pass
 
     def move(self):
-        pass
+        while True:
+            try:
+                target = self.ask()
+                repeat = self.enemyboard.shot(target)
+                return repeat
+            except BoardException as e:
+                if type(self)!=Computer:
+                    print(e)
+                else:
+                    print("Но такой ход у него уже был")
+
 
 class Computer(Player):
     def ask(self):
-        pass
+        dot = Dot(randint(0,5),randint(0,5))
+        print(f"Компьютер сходил: {dot.x+1} {dot.y+1}")
+        return dot
+
 
 class User(Player):
-    pass
+    def ask(self):
+        while True:
+            s = input("Введите координаты через пробел: ").split()
+            if len(s)!=2:
+                print("Введите 2 координаты!")
+                continue
+            x,y=s
+            if not x.isdigit() or not y.isdigit():
+                print("Введите числа!")
+                continue
+            x, y = int(x), int(y)
+            return Dot(x-1, y-1)
 
 class Game:
-    def __init__(self, players):
-        self.player = User()
+    def __init__(self, size=6, cheats=False):
+        self.size = size
+        playerboard = self.generate_board()
+        compboard = self.generate_board()
+        compboard.hidden = False if cheats else True
+        self.player = User(playerboard, compboard)
+        self.computer = Computer(compboard, playerboard)
 
-board = Board()
-board.add_ship(Ship(Dot(2,2),1,True))
-board.add_ship(Ship(Dot(5,5),1,True))
-board.add_ship(Ship(Dot(5,1),3,False))
-board.add_ship(Ship(Dot(0,1),3,False))
-board.add_ship(Ship(Dot(0,5),3,True))
-board.add_ship(Ship(Dot(1,0),4,True))
-board.shot(Dot(1,1))
-board.shot(Dot(0,1))
-board.shot(Dot(0,2))
-board.shot(Dot(0,3))
-print(board)
+    def generate_board(self):
+        length_ships = [3,2,2,1,1,1,1]
+        board = Board(size=self.size)
+        for length in length_ships:
+            while True:
+                ship = Ship(Dot(randint(0, self.size), randint(0,self.size)),length, choice([True, False]))
+                try:
+                    board.add_ship(ship)
+                    break
+                except BoardWrongShipException:
+                    pass
+        return board
+    
+    def welcome(self):
+        print("-------------------")
+        print("  Приветсвуем вас  ")
+        print("      в игре       ")
+        print("    морской бой    ")
+        print("-------------------")
+        print(" формат ввода: x y ")
+        print(" x - номер строки  ")
+        print(" y - номер столбца ")
+
+    def start(self):
+        step = 0
+        while True:
+            print('-'*20)
+            print("Ваша доска")
+            print(self.player.board)
+            print('-'*20)
+            print("Доска компьютера")
+            print(self.computer.board)
+            if step%2 == 0:
+                print("Ваш ход: ")
+                repeat = self.player.move()
+            else:
+                print("Сейчас ходит компьютер")
+                repeat = self.computer.move()
+            if repeat:
+                step-=1
+            if self.computer.board.count == 7:
+                print("Вы выиграли!")
+                break
+            if self.player.board.count == 7:
+                print("Компьютер выиграл!")
+                break
+            step+=1
+
+
+g = Game(cheats=True)
+#g = Game()
+g.welcome()
+g.start()
+
+
 
 
 
